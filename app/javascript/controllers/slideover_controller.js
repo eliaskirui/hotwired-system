@@ -1,7 +1,7 @@
 import { Controller } from 'stimulus'
 
 export default class extends Controller {
-  static targets = [ "slideover", "form" ]
+  static targets = [ "slideover" ]
 
   connect() {
     this.backgroundHtml = this.backgroundHTML()
@@ -19,6 +19,9 @@ export default class extends Controller {
     document.body.insertAdjacentHTML('beforeend', this.backgroundHtml)
     this.background = document.querySelector(`#slideover-background`)
     this.toggleSlideover()
+    document.addEventListener("submit:success", () => {
+      this.close()
+    }, { once: true })
   }
 
   close() {
@@ -41,12 +44,5 @@ export default class extends Controller {
 
   backgroundHTML() {
     return `<div id="slideover-background" class="fixed top-0 left-0 w-full h-full z-20"></div>`;
-  }
-
-  handleResponse({ detail: { success } }) {
-    if (success) {
-      this.formTarget.reset()
-      this.close()
-    }
   }
 }
