@@ -1,4 +1,6 @@
 class ApplicantsController < ApplicationController
+  include Filterable
+  before_action :turbo_frame_request_variant
   before_action :set_applicant, only: %i[ show edit update destroy change_stage ]
   def change_stage
     @applicant.update(applicant_params)
@@ -6,8 +8,26 @@ class ApplicantsController < ApplicationController
   end
 
   # GET /applicants or /applicants.json
+  # def index
+  #   @applicants = Applicant.all
+  # end
   def index
-    @applicants = Applicant.all
+
+    @grouped_applicants = filter!(Applicant)
+                            .for_account(current_user.account_id)
+                            .group_by(&:stage)
+
+    if search_params.present?
+      @applicants = Applicant.includes(:job)
+      @applicants = @applicants.where(job_id: search_params[:job]) if search_params[:job].present?
+      @applicants = @applicants.text_search(search_params[:query]) if search_params[:query].present?
+      if search_params[:sort].present?
+        sort = search_params[:sort].split('-')
+        @applicants = @applicants.order("#{sort[0]} #{sort[1]}")
+      end
+    else
+      @applicants = Applicant.includes(:job).all
+    end
   end
 
   # GET /applicants/1 or /applicants/1.json
@@ -73,4 +93,12 @@ class ApplicantsController < ApplicationController
     def applicant_params
       params.require(:applicant).permit(:first_name, :last_name, :email, :phone, :stage, :status, :job_id, :resume)
     end
+
+  def search_params
+    params.permit(:query, :job, :sort)
+  end
+
+  def turbo_frame_request_variant
+    request.variant = :turbo_frame if turbo_frame_request?
+  end
 end
