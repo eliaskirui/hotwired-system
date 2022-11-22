@@ -2,6 +2,8 @@ class ApplicantsController < ApplicationController
   include Filterable
   before_action :turbo_frame_request_variant
   before_action :set_applicant, only: %i[ show edit update destroy change_stage ]
+  before_action :authenticate_user!
+
   def change_stage
     @applicant.update(applicant_params)
     head :ok
